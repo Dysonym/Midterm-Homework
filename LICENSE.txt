@@ -1,3 +1,4 @@
+This is the license for https://github.com/anfederico/Flaskex which was used to start this project.
 MIT License
 
 Copyright (c) 2017 Anthony Federico
