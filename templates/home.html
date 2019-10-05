@@ -2,7 +2,23 @@
 {% block body %}
 {% include "navbar.html" %}
 <section class="hero is-primary is-bold is-large">
-  <div class="hero-body"></div>
+  <div class="hero-body">
+    <div class="container">
+      <div class="has-text-centered">
+        <p>Drag and Drop pictures in the box below to get a prediction from our model:</p>
+      </div>
+      <div class="box" style="min-height:600px; min-width:800px;"></div>
+      <div class="has-text-centered">
+          <div>
+            {% if not user.paid %}
+            <p class="heading">Free Predictions Remaining</p>
+            
+            <p class="title">{{user.trials}} {{user.paid}}</p>
+            {% endif %}
+          </div>
+        </div>
+    </div>
+  </div>
 </section>
 {% endblock %}
 {% block scripts %}
