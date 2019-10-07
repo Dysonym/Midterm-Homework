@@ -7,39 +7,100 @@
       <div class="has-text-centered">
         <p>Drag and Drop pictures in the box below to get a prediction from our model:</p>
       </div>
-      <div class="box" style="min-height:600px; min-width:800px;">
-        <canvas id="drop_canvas"  style = "width:100%; height:100%;border-style: solid; border-width: 5px; border-color: blue;"></canvas>
+      <div class="box has-text-centered" >
+        <canvas id="drop_canvas" width="150" height="150" style = "margin-left:auto; margin-right: auto; min-width:150; min-height:150;border-style: solid; border-width: 5px; border-color: blue;"></canvas>
       
       </div>
-      <div class="has-text-centered">
+      <div class="box has-text-centered">
           <div>
-            {% if not user.paid %}
-            <p class="heading">Free Predictions Remaining</p>
+            <p class="heading">Current Prediction</p>
             
-            <p class="title">{{user.trials}} {{user.paid}}</p>
-            {% endif %}
+            <p class="title" id="pred"></p>
           </div>
         </div>
     </div>
+    <div class="has-text-centered">
+      <div>
+        {% if not user.paid %}
+        <p class="heading">Free Predictions Remaining</p>
+        
+        <p class="title">{{user.trials}}</p>
+        {% endif %}
+      </div>
+    </div>
+</div>
   </div>
 </section>
+<progress class="progress is-small is-primary" max="100">15%</progress>
 {% endblock %}
 {% block scripts %}
 <script
   src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
   integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8="
   crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js"> </script>
 <script src="../static/js/scripts.js"></script>
 <script src="../static/js/dropper.jq.js"></script>
 <script type="text/javascript">
-  // Get out canvas, save it and call imageDrop on it to detect and image being dropped
-  var $canvas = $('#drop_canvas').imageDrop(function(image){
-      // Call imagePainter to draw said image on the canvas
-      $canvas.imagePainter({
-          image: image,
-          // Place image on the center of the canvas
-          center: 'canvas'
-      });
+
+  
+
+  var model = null;
+
+  $progress = $("progress");
+  $pred = $("#pred");
+
+  //$body.addClass("loading");
+
+  async function load_model(){
+    model = await tf.loadLayersModel('static/model/model.json');
+  }
+  load_model().then(function() {
+    $progress.hide()
   });
+
+  // Get out canvas, save it and call imageDrop on it to detect and image being dropped
+  var $canvas = $('#drop_canvas');
+  var canvas = $canvas.get()[0];
+  var arr =  null;
+  var p = null;
+
+  async function predict(){
+
+    picture = tf.browser.fromPixels(canvas).expandDims(0)
+    picture = tf.image.resizeBilinear(picture, [150,150])
+    tf.browser.toPixels(picture.squeeze(), canvas)
+    console.log(picture.shape)
+
+    p = await model.predict(picture);
+    //console.log(JSON.stringify(arr[0]))
+    result = p.squeeze().argMax().dataSync()[0];
+    if(result==1){
+      $pred.text("Pneumonia").css({ 'color': 'red'});
+    } else {
+      $pred.text("Not Pneumonia!").css({ 'color': 'green'});
+    }
+    $pred.show();
+    $progress.hide();
+
+  }
+
+  async function draw(image){
+    $canvas.imagePainter({
+        "image": image,
+        // Place image on the center of the canvas
+        "center": 'canvas',
+        //"fit": true,
+        "resize":true
+    });
+  }
+
+  $canvas.imageDrop(function(image){
+    $progress.show()
+    $pred.hide()
+    // Call imagePainter to draw said image on the canvas
+    draw(image).then(predict)
+  });
+  
 </script>
 {% endblock %}
